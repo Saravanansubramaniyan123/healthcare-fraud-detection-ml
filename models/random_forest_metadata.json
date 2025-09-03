@@ -1,0 +1,9 @@
+{
+  "model_type": "RandomForest",
+  "n_estimators": 500,
+  "max_depth": 4,
+  "train_accuracy": 0.8745709004489042,
+  "val_accuracy": 0.8718422674060382,
+  "train_f1": 0.5739910313901345,
+  "val_f1": 0.559322033898305
+}

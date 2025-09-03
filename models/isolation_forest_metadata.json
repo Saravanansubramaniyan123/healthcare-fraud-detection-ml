@@ -1,0 +1,6 @@
+{
+  "model_type": "IsolationForest",
+  "contamination": 0.09,
+  "n_estimators": 100,
+  "pca_components": 29
+}

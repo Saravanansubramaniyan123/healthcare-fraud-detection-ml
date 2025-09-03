@@ -1,0 +1,8 @@
+{
+  "model_type": "LogisticRegression",
+  "threshold": 0.6,
+  "train_accuracy": 0.9244784790071296,
+  "val_accuracy": 0.9229821318545902,
+  "train_f1": 0.5902578796561605,
+  "val_f1": 0.6246246246246246
+}
