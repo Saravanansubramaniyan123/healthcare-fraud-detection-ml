@@ -5,9 +5,9 @@ End‑to‑end machine‑learning pipeline to flag **potentially fraudulent heal
 ---
 
 ## 🚀 TL;DR
-- **Goal:** Predict `PotentialFraud` at the **provider** level using inpatient/outpatient/beneficiary signals.
-- **Approach:** Clean & merge → feature engineering → class‑imbalance handling → train multiple models → choose operating threshold → persist artifacts and outputs.
-- **Artifacts:** Trained models (`.joblib`), metadata (`.json`), and **CSV outputs saved by the script** for reproducibility.
+- **Goal:** Predict provider‑level fraud (`PotentialFraud`) using claims and beneficiary data.
+- **Approach:** Clean & merge → feature engineering → imbalance handling → model training (LR, RF, IF) → threshold tuning.
+- **Repo layout:** Professional folder structure (`data/`, `models/`, `src/`, `README.md`).
 
 ---
 
@@ -21,31 +21,30 @@ End‑to‑end machine‑learning pipeline to flag **potentially fraudulent heal
 
 ---
 
-## 🗂️ What’s in this Repo
-Actual file names may vary across runs, but you will typically see:
-
+## 🗂️ Repository Structure
 ```
-├─ healthcare_fraud_detection.py     # Main pipeline script (code-first project)
-├─ models/                           # Trained models + transformers + metadata
+├─ data/                          # All program-generated CSVs
+│  ├─ processed/                  # Engineered datasets at provider level
+│  └─ submissions/                # Final prediction CSVs
+│
+├─ models/                        # Saved models + transformers + metadata
 │  ├─ logistic_regression_threshold_60.joblib
 │  ├─ random_forest.joblib
 │  ├─ isolation_forest.joblib
 │  ├─ isolation_forest_pca_scaler.joblib
 │  ├─ isolation_forest_pca_transformer.joblib
 │  ├─ logistic_regression_scaler.joblib
-│  ├─ *metadata.json                 # feature list, thresholds, versions
+│  ├─ *metadata.json
 │  └─ ...
-├─ data/
-│  ├─ processed/                     # Program-saved processed datasets (features, joins)
-│  └─ submissions/                   # Program-saved prediction CSVs (see below)
-│     ├─ Submission_logistic_regression_threshold_60.csv
-│     ├─ Submission_Random_Forest_Classifier.csv
-│     └─ Submission_Isolation_Forest.csv
+│
+├─ src/                           # Source code
+│  └─ healthcare_fraud_detection.py
+│
 ├─ README.md
-└─ requirements.txt
+└─ requirements.txt (to be added)
 ```
 
-> If you see these files at the **repo root** currently, that’s fine functionally. For a more professional layout, consider placing them under the `models/` and `data/` folders as shown above.
+> ✅ This structure is clean and professional: `data/` for outputs, `models/` for joblibs/jsons, `src/` for main Python code, and `README.md` at the top level.
 
 ---
 
@@ -53,15 +52,13 @@ Actual file names may vary across runs, but you will typically see:
 ```bash
 # 1) Create & activate a virtual environment
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-# source .venv/bin/activate
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate   # Linux/Mac
 
 # 2) Install dependencies
 pip install -r requirements.txt
 ```
-**Suggested requirements (edit if your versions differ):**
+**Suggested requirements (edit if versions differ):**
 ```
 pandas>=2.0
 numpy>=1.24
@@ -73,87 +70,64 @@ joblib>=1.3
 
 ---
 
-## 🧪 How to Run the Pipeline
-> The project is implemented as a single Python program. Paths and options are defined in the script; some runs may expose CLI flags, but the default is a one‑command run.
-
-### Option A — One command
+## 🧪 How to Run
+### Run full pipeline
 ```bash
-python healthcare_fraud_detection.py
+python src/healthcare_fraud_detection.py
 ```
 This will:
-- Load/prepare data (from your configured paths)
-- Engineer provider‑level features
-- Train models (Logistic Regression, Random Forest, Isolation Forest)
-- Apply thresholding (e.g., 0.60 for the LR variant in this run)
-- **Save processed datasets and predictions as CSVs** under `data/processed/` and `data/submissions/`
-- Persist trained models + scalers + metadata to `models/`
+- Load raw/processed data (depending on your setup)
+- Engineer features
+- Train models (LR, RF, IF)
+- Apply thresholds (e.g., 0.60 for Logistic Regression)
+- Save artifacts → `models/`
+- Save CSV outputs → `data/processed/` and `data/submissions/`
 
-### Option B — With explicit arguments (if enabled)
+### (Optional) Run with explicit args
 ```bash
-python healthcare_fraud_detection.py \
+python src/healthcare_fraud_detection.py \
   --raw_dir data/raw \
   --processed_dir data/processed \
   --models_dir models \
   --submissions_dir data/submissions \
   --model lr --threshold 0.60 --seed 42
 ```
-> If the above flags are not implemented in your local copy, use **Option A** and edit the configuration constants at the top of the script.
 
 ---
 
-## 📦 Outputs (Saved by the Program)
-- **Models & Transformers** (`models/`)
-  - `logistic_regression_threshold_60.joblib`
-  - `random_forest.joblib`
-  - `isolation_forest.joblib`
-  - `logistic_regression_scaler.joblib`
-  - `isolation_forest_pca_scaler.joblib`, `isolation_forest_pca_transformer.joblib`
-  - `*_metadata.json` (feature order, preprocessing config, thresholds, versions)
-- **Program‑Generated CSVs**
-  - `data/processed/*.csv` — cleaned/merged/engineered datasets at provider level
-  - `data/submissions/Submission_*.csv` — predictions for evaluation/submit
+## 📦 Outputs (Program‑Saved)
+- **Models & Transformers** in `models/`
+- **Processed CSVs** in `data/processed/`
+- **Submissions** in `data/submissions/`
 
-> ✅ These CSVs are included in the repo intentionally to make the run **reproducible** for reviewers without re‑processing the raw Kaggle files.
+These are committed to repo for easy reproducibility.
 
 ---
 
-## 🏗️ Methodology (High‑Level)
-1. **Cleaning & Integration** — Join Beneficiary, Inpatient, Outpatient claims → provider‑level table.
-2. **Feature Engineering** — Claim counts, unique beneficiaries, reimbursement and deductible stats, LOS metrics, procedure/diagnosis diversity, temporal patterns.
-3. **Imbalance Handling** — Class weights and/or sampling where appropriate.
-4. **Modeling** —
-   - **Logistic Regression** (with scaler)
-   - **Random Forest Classifier**
-   - **Isolation Forest** (unsupervised anomaly signals, optionally with PCA)
-5. **Evaluation** — Accuracy, Precision, Recall, F1, ROC‑AUC; select threshold to favor recall at acceptable precision.
-6. **Persistence** — Save models, scalers, metadata; export processed datasets and submissions as CSVs.
+## 🏗️ Methodology
+1. **Merge raw tables** → provider level.
+2. **Engineer features** → claim counts, reimbursements, LOS, beneficiary diversity.
+3. **Handle imbalance** → class weights / resampling.
+4. **Train models** → Logistic Regression, Random Forest, Isolation Forest.
+5. **Evaluate** → Accuracy, Precision, Recall, F1, ROC‑AUC.
+6. **Persist** → Models + scalers + metadata JSON + CSVs.
 
 ---
 
-## 🔮 Inference Example (Load a Saved Model)
+## 🔮 Inference Example
 ```python
-import joblib
-import pandas as pd
+import joblib, pandas as pd
 
-# Provider-level features must match the training feature list & order
 X = pd.read_csv("data/processed/provider_features.csv")
 clf = joblib.load("models/logistic_regression_threshold_60.joblib")
 proba = clf.predict_proba(X)[:, 1]
 X.assign(fraud_risk=proba).to_csv("data/submissions/predictions_lr.csv", index=False)
 ```
-> Always keep the **feature order** consistent with the order stored in your `*_metadata.json`.
-
----
-
-## 🔁 Reproducibility & Notes
-- Fixed random seed where applicable (default `42`).
-- `requirements.txt` captures core dependencies; pin exact versions for strict reproducibility.
-- Large artifacts (>100 MB) should use **Git LFS** or external storage.
 
 ---
 
 ## 🧭 Responsible Use
-This project flags **potential** fraud for investigation. It **does not** determine guilt. Any deployment should include human oversight, audit logs, bias checks, and policy‑aligned thresholds.
+This project flags **potential** fraud for review. It does **not** prove actual fraud. Always validate with domain experts and policies.
 
 ---
 
@@ -161,10 +135,3 @@ This project flags **potential** fraud for investigation. It **does not** determ
 - Kaggle dataset: *Healthcare Provider Fraud Detection Analysis*.
 - Python ecosystem: pandas, scikit‑learn, numpy, imbalanced‑learn, matplotlib.
 
----
-
-## 🗺️ Roadmap (Optional)
-- [ ] Move files into `models/` and `data/…` folders for a cleaner structure
-- [ ] Add a tiny `demo.ipynb` (cleared outputs) for quick walkthrough
-- [ ] Add CLI flags/config file for reproducible experiments
-- [ ] Add unit tests for data prep & feature builders
