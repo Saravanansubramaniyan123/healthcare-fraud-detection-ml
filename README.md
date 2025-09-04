@@ -66,8 +66,7 @@ The task is to analyze Medicare claims data (beneficiary, inpatient, outpatient)
 ├─ src/                           # Source code
 │  └─ healthcare_fraud_detection.py
 │
-├─ README.md
-└─ requirements.txt (to be added)
+└─ README.md 
 ```
 
 ---
